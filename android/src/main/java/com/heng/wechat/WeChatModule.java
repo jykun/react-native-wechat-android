@@ -102,7 +102,7 @@ public class WeChatModule extends ReactContextBaseJavaModule {
     String desc = null;
     String transaction = null;
     Bitmap bitmap = null;           //分享的缩略图
-    int thumbSize = 120;            //分享的缩略图大小
+    int thumbSize = 100;            //分享的缩略图大小
     int scene;                      //分享的方式(0:聊天界面，1:朋友圈，2:收藏)
 
 
