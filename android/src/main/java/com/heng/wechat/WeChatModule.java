@@ -280,7 +280,7 @@ public class WeChatModule extends ReactContextBaseJavaModule {
                     if (!TextUtils.isEmpty(tagName)) {
                         msg.mediaTagName = tagName;
                     }
-                    if (bitmap != null) {
+                    if (bitmap != null && type !=TYPE_IMAGE) {
                         Bitmap thumbBmp = Bitmap.createScaledBitmap(bitmap, thumbSize, thumbSize, true);
                         bitmap.recycle();
                         msg.thumbData = bmpToByteArray(thumbBmp, true);
