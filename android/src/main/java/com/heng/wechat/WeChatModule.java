@@ -59,7 +59,6 @@ public class WeChatModule extends ReactContextBaseJavaModule {
     public static final String OPTIONS_TITLE = "title";
     public static final String OPTIONS_DESC = "desc";
     public static final String OPTIONS_TAG_NAME = "tagName";
-    public static final String OPTIONS_THUMB_SIZE = "thumbSize";
     public static final String OPTIONS_TRANSACTION = "transaction";
     public static final String OPTIONS_SCENE = "scene";
     public static final String OPTIONS_TYPE = "type";
@@ -102,7 +101,6 @@ public class WeChatModule extends ReactContextBaseJavaModule {
     String desc = null;
     String transaction = null;
     Bitmap bitmap = null;           //分享的缩略图
-    int thumbSize = 100;            //分享的缩略图大小
     int scene;                      //分享的方式(0:聊天界面，1:朋友圈，2:收藏)
 
 
@@ -261,9 +259,6 @@ public class WeChatModule extends ReactContextBaseJavaModule {
                     if (options.hasKey(OPTIONS_TAG_NAME)) {
                         tagName = options.getString(OPTIONS_TAG_NAME);
                     }
-                    if (options.hasKey(OPTIONS_THUMB_SIZE)) {
-                        thumbSize = options.getInt(OPTIONS_THUMB_SIZE);
-                    }
                     if (options.hasKey(OPTIONS_TRANSACTION)) {
                         transaction = options.getString(OPTIONS_TRANSACTION);
                     }
@@ -280,10 +275,9 @@ public class WeChatModule extends ReactContextBaseJavaModule {
                     if (!TextUtils.isEmpty(tagName)) {
                         msg.mediaTagName = tagName;
                     }
-                    if (bitmap != null && type !=TYPE_IMAGE) {
-                        Bitmap thumbBmp = Bitmap.createScaledBitmap(bitmap, thumbSize, thumbSize, true);
+                    if (bitmap != null) {
+                        msg.thumbData = compressBitmapToData(bitmap, 32);
                         bitmap.recycle();
-                        msg.thumbData = bmpToByteArray(thumbBmp, true);
                     }
 
                     SendMessageToWX.Req req = new SendMessageToWX.Req();
@@ -370,23 +364,40 @@ public class WeChatModule extends ReactContextBaseJavaModule {
 
 
     /**
-     * Added by heng on 2015/12/29
-     * <p/>
-     * Bitmap to byte array
+     * 微信分享图片限制
+     * @param bmp
+     * @param size
+     * @return
      */
-    private byte[] bmpToByteArray(Bitmap bmp, boolean needRecycle) {
+    private byte[] compressBitmapToData(Bitmap bmp,float size) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, output);
-        if (needRecycle) {
-            bmp.recycle();
-        }
-        byte[] result = output.toByteArray();
+        byte[] result;
         try {
-            output.close();
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, output);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
+            int options = 100;
+            while ( output.toByteArray().length / 1024 >= size) {  //循环判断如果压缩后图片是否大于size kb,大于继续压缩
+                output.reset();//重置baos即清空baos
+                bmp.compress(Bitmap.CompressFormat.JPEG, options, output);//这里压缩options%，把压缩后的数据存放到baos中
+                if(options==1){
+                    break;
+                }
+                options -= 10;//每次都减少10
+                if(options<=0){
+                    options=1;
+                }
+            }
+            result = output.toByteArray();
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
+        }finally {
+            try {
+                output.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        return result;
     }
 
     /**
@@ -404,10 +415,8 @@ public class WeChatModule extends ReactContextBaseJavaModule {
      * 获取图片对象
      * */
     private WXImageObject getImageObj(ReadableMap options) {
-        WXImageObject imageObject = new WXImageObject();
         if (options.hasKey(OPTIONS_IMAGE_URL)) {
             String remoteUrl = options.getString(OPTIONS_IMAGE_URL);
-            imageObject.imageUrl = remoteUrl;
             try {
                 bitmap = BitmapFactory.decodeStream(new URL(remoteUrl).openStream());
             } catch (IOException e) {
@@ -417,14 +426,23 @@ public class WeChatModule extends ReactContextBaseJavaModule {
         }
         if (options.hasKey(OPTIONS_IMAGE_PATH)) {
             String localPath = options.getString(OPTIONS_IMAGE_PATH);
-            File file = new File(localPath);
-            if (file.exists()) {
-                imageObject.setImagePath(localPath);
-                bitmap = BitmapFactory.decodeFile(localPath);
-            } else {
-                bitmap = null;
+            if (localPath.contains("http")){
+                try {
+                    bitmap = BitmapFactory.decodeStream(new URL(localPath).openStream());
+                } catch (IOException e) {
+                    bitmap = null;
+                    e.printStackTrace();
+                }
+            }else {
+                File file = new File(localPath);
+                if (file.exists()) {
+                    bitmap = BitmapFactory.decodeFile(localPath);
+                } else {
+                    bitmap = null;
+                }
             }
         }
+        WXImageObject imageObject = new WXImageObject(bitmap);
         return imageObject;
     }
 
