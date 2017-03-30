@@ -3,23 +3,25 @@ package com.heng.wechat;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
-import com.tencent.mm.sdk.modelmsg.SendAuth;
-import com.tencent.mm.sdk.modelmsg.SendMessageToWX;
-import com.tencent.mm.sdk.modelmsg.WXImageObject;
-import com.tencent.mm.sdk.modelmsg.WXMediaMessage;
-import com.tencent.mm.sdk.modelmsg.WXMusicObject;
-import com.tencent.mm.sdk.modelmsg.WXTextObject;
-import com.tencent.mm.sdk.modelmsg.WXVideoObject;
-import com.tencent.mm.sdk.modelmsg.WXWebpageObject;
-import com.tencent.mm.sdk.modelpay.PayReq;
-import com.tencent.mm.sdk.openapi.IWXAPI;
-import com.tencent.mm.sdk.openapi.WXAPIFactory;
+import com.tencent.mm.opensdk.modelmsg.SendAuth;
+import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
+import com.tencent.mm.opensdk.modelmsg.WXImageObject;
+import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
+import com.tencent.mm.opensdk.modelmsg.WXMiniProgramObject;
+import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
+import com.tencent.mm.opensdk.modelmsg.WXTextObject;
+import com.tencent.mm.opensdk.modelmsg.WXVideoObject;
+import com.tencent.mm.opensdk.modelmsg.WXWebpageObject;
+import com.tencent.mm.opensdk.modelpay.PayReq;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,6 +47,11 @@ import java.net.URL;
  * 1.Added method openWXApp
  * 2.Edited callback(err,res)
  * 3.Reconstruction code
+ * <p/>
+ * edited by kun on 2017/03/28
+ * 1.added share mini program
+ * 2.fixed share remote image
+ * 3.updated wx sdk library
  */
 public class WeChatModule extends ReactContextBaseJavaModule {
 
@@ -77,6 +84,9 @@ public class WeChatModule extends ReactContextBaseJavaModule {
 
     public static final String OPTIONS_VIDEO_URL = "videoUrl";
     public static final String OPTIONS_VIDEO_LOW_BAND_URL = "videoLowBandUrl";
+
+    public static final String OPTIONS_PROGRAM_USER_NAME = "userName";
+    public static final String OPTIONS_PROGRAM_PATH = "programPath";
     /*============ WeChat share options key ==============*/
 
     /*============ WeChat pay options key ==============*/
@@ -95,6 +105,7 @@ public class WeChatModule extends ReactContextBaseJavaModule {
     public static final int TYPE_WEB_PAGE = 3;      //网页
     public static final int TYPE_MUSIC = 4;         //音乐
     public static final int TYPE_VIDEO = 5;         //视频
+    public static final int TYPE_PROGRAM = 6;       //小程序
 
     String tagName = null;
     String title = null;
@@ -242,6 +253,9 @@ public class WeChatModule extends ReactContextBaseJavaModule {
                             break;
                         case TYPE_VIDEO:
                             msg.mediaObject = getVideoObj(options);
+                            break;
+                        case TYPE_PROGRAM:
+                            msg.mediaObject = getProgramObject(options);
                             break;
                         default:
                             if (callback != null) {
@@ -513,4 +527,31 @@ public class WeChatModule extends ReactContextBaseJavaModule {
         return videoObject;
     }
 
+    /*
+    * 获取小程序对象
+    * */
+    private WXMiniProgramObject getProgramObject(ReadableMap options){
+        WXMiniProgramObject programObject = new WXMiniProgramObject();
+        if (options.hasKey(OPTIONS_WEBPAGE_URL)){
+            programObject.webpageUrl = options.getString(OPTIONS_WEBPAGE_URL);// 低版本微信打开url
+        }
+        if (options.hasKey(OPTIONS_PROGRAM_USER_NAME)){
+            programObject.userName = options.getString(OPTIONS_PROGRAM_USER_NAME); // 跳转微信小程序的原始name
+        }
+        if (options.hasKey(OPTIONS_PROGRAM_PATH)){
+            // 小程序path
+            programObject.path = options.getString(OPTIONS_PROGRAM_PATH);
+        }
+
+        if(options.hasKey(OPTIONS_THUMB_IMAGE)){
+            String thumbImage = options.getString(OPTIONS_THUMB_IMAGE);
+            try {
+                bitmap = BitmapFactory.decodeStream(new URL(thumbImage).openStream());
+            } catch (IOException e) {
+                bitmap = null;
+                e.printStackTrace();
+            }
+        }
+        return programObject;
+    }
 }
