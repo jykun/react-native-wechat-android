@@ -128,6 +128,7 @@ options : 分享到微信需要的参数
   * 3:网页
   * 4:音乐
   * 5:视频
+  * 6:小程序
  * title （分享的标题）
  * desc （分享的描述）
  * thumbSize （分享的缩略图大小，不传默认150）
@@ -144,6 +145,8 @@ options : 分享到微信需要的参数
  * musicUrl （当分享类型为音乐时使用）
  * musicLowBandUrl （当分享类型为音乐时使用）
  * thumbImage （仅当分享类型为网页、音乐、视频时使用）
+ * userName （当分享类型为小程序名称）
+ * programPath （仅当分享类型为小程序路径）
 
 callback : 回调(err,res)
 
@@ -214,6 +217,20 @@ var videoOptions = {
 
       videoUrl: 'http://www.iqiyi.com/v_19rrnlidhk.html?src=sharemodclk131212',
       thumbImage: 'http://img1.imgtn.bdimg.com/it/u=3924416677,403957246&fm=21&gp=0.jpg',
+}
+
+//分享小程序
+var videoOptions = {
+      title: '这里是分享的标题',
+      desc: '这个小程序，一起来看看',
+      transaction: 'program',
+      scene: 1,
+      type: 6,
+      webpageUrl: 'https://github.com/beefe/react-native-wechat-android',// 低版本分享网页
+      thumbImage: 'http://img1.imgtn.bdimg.com/it/u=3924416677,403957246&fm=21&gp=0.jpg',
+
+      userName: 'xxxxxxxx',// 小程序名称
+      programPath: '',//可为空
 }
 
 WeChatAndroid.sendReq(videoOptions,(err,sendOK) => {
