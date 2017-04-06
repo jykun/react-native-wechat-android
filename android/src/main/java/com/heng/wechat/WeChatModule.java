@@ -2,6 +2,7 @@ package com.heng.wechat;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -291,6 +292,12 @@ public class WeChatModule extends ReactContextBaseJavaModule {
                     }
                     if (bitmap != null) {
                         msg.thumbData = compressBitmapToData(bitmap, 32);
+                        while (msg.thumbData.length / 1024 > 32){
+                            Matrix matrix = new Matrix();
+                            matrix.setScale(0.5f, 0.5f);
+                            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                            msg.thumbData = compressBitmapToData(bitmap, 32);
+                        }
                         bitmap.recycle();
                     }
 
