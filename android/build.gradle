@@ -11,6 +11,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.facebook.react:react-native:+'
+    compile 'com.tencent.mm.opensdk:wechat-sdk-android-with-mta:+'
 }
